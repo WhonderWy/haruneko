@@ -16,6 +16,7 @@
         "@types/chrome": "^0.0.279",
         "@types/jsdom": "^21.1.7",
         "@types/nw.js": "^0.92.0",
+        "concurrently": "^9.0.1",
         "eslint": "^9.13.0",
         "eslint-plugin-tsdoc": "^0.3.0",
         "jsdom": "^25.0.1",
@@ -32,6 +33,7 @@
         "test": "npm run test --workspaces",
         "test:e2e": "npm run build --workspaces && vitest run --config=test/vitest.e2e.js",
         "test:websites": "npm run build --workspaces && vitest run --config=test/vitest.websites.js",
-        "npm:clean-install": "npm update --package-lock-only && npm ci"
+        "npm:clean-install": "npm update --package-lock-only && npm ci",
+        "start": "concurrently --kill-others \"npm run serve:dev --workspace web\" \"npm run launch:dev --workspace app/electron\""
     }
 }
