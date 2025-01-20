@@ -4,7 +4,6 @@
         Button,
         ClickableTile,
         ContextMenu,
-        ContextMenuDivider,
         ContextMenuOption,
     } from 'carbon-components-svelte';
     import {
@@ -24,74 +23,89 @@
     import { onDestroy, onMount } from 'svelte';
     import type { MediaContainer2 } from '../Types';
 
-    export let style = '';
 
-    export let media: MediaContainer2;
-    let selected: boolean = false;
-    $: selected = $selectedMedia?.IsSameAs(media);
-
-    //Bookmarks
-    $: isBookmarked = media
-        ? HakuNeko.BookmarkPlugin.IsBookmarked(media)
-        : false;
-    async function toggleBookmark() {
-        isBookmarked = await window.HakuNeko.BookmarkPlugin.Toggle(media);
+    interface Props {
+        style?: string;
+        // TODO: Instead of conditional pollution, split component into one for showing containers and one for showing bookmarks
+        media: MediaContainer2 | Bookmark;
     }
-    $: isOrphaned =
-        isBookmarked && (media as Bookmark).IsOrphaned ? true : false;
 
+    let { style = '', media }: Props = $props();
+    let selected: boolean = $derived($selectedMedia?.IsSameAs(media));
+
+    // Bookmarks
+    let isBookmarked=$state(false);
+    let isMediaOrphanedBookmark = $state(true);
+    $effect(() => {
+        if(!media) return;
+        isBookmarked = HakuNeko.BookmarkPlugin.IsBookmarked(media);
+        isMediaOrphanedBookmark = media instanceof Bookmark && media.IsOrphaned;
+    });
+    async function toggleBookmark() {
+        isBookmarked = await window.HakuNeko.BookmarkPlugin.Toggle(media as MediaContainer2);
+    }
     //Context menu
-    let mediadiv: HTMLElement;
+    let mediadiv: HTMLElement = $state();
 
     //Unviewed content
-    let unFlaggedItems: MediaContainer<MediaChild>[] = [];
+    let unFlaggedItems: MediaContainer<MediaChild>[] = $state([]);
     let delayedContentCheck;
 
 
     async function findMediaUnFlaggedContent(updatedmedia:MediaContainer<MediaChild>) {
-        if (updatedmedia.IsSameAs(media)) { 
+        if (!updatedmedia.IsSameAs(media)) return;
+        
+        unFlaggedItems = [];
+        const delay = $selectedMedia?.IsSameAs(HakuNeko.BookmarkPlugin) ? 0 : 800;
+        delayedContentCheck = setTimeout(
+        async () => {
             unFlaggedItems = (await HakuNeko.ItemflagManager.GetUnFlaggedItems(
-                media,
+                media as MediaContainer2,
             )) as MediaContainer<MediaChild>[];
-        } 
+        },delay);
     }
+    findMediaUnFlaggedContent(media);
 
     onMount(() => {
-        const delay = $selectedMedia?.IsSameAs(HakuNeko.BookmarkPlugin) ? 0 : 1500;
-        delayedContentCheck = setTimeout(
-        () => {
-            findMediaUnFlaggedContent(media);
-            HakuNeko.ItemflagManager.ContainerFlagsEventChannel.Subscribe(findMediaUnFlaggedContent);
-        },delay);
+        HakuNeko.ItemflagManager.ContainerFlagsEventChannel.Subscribe(findMediaUnFlaggedContent);
+       
     });
 
     onDestroy(() => {
         clearTimeout(delayedContentCheck);
         HakuNeko.ItemflagManager.ContainerFlagsEventChannel.Unsubscribe(findMediaUnFlaggedContent);
+        document.removeEventListener('contextmenu', outsideClickListener);
     });
+
+    // clear menu when right click outside
+    let menuOpen = $state(false);
+
+    function outsideClickListener(event) {
+        if (open && !mediadiv.contains(event.target)) {
+            menuOpen=false;
+            document.removeEventListener('contextmenu', outsideClickListener);
+        }
+    }
+    function menuOpens() {
+        document.addEventListener('contextmenu', outsideClickListener);
+    }
     
+
 </script>
 
-<ContextMenu target={[mediadiv]}>
-    <ContextMenuOption indented labelText="Browse Chapters" shortcutText="⌘B" />
-    <ContextMenuOption
-        indented
-        labelText={isBookmarked ? 'Remove from Bookmarks' : 'Add to Bookmarks'}
-        shortcutText="⌘F"
-        onclick={toggleBookmark}
-    />
-    <ContextMenuDivider />
-    <ContextMenuOption indented labelText="Trackers">
-        <!--{#each window.HakuNeko.PluginController.InfoTrackers as tracker}
-            <ContextMenuOption labelText="{tracker.Title}" onclick={() => {selectedTracker=tracker; isTrackerModalOpen=true;}} />
-        {/each}
-            -->
-    </ContextMenuOption>
-    <ContextMenuDivider />
-</ContextMenu>
-
 <div bind:this={mediadiv} class="media" {style} in:fade class:selected>
-    {#if isOrphaned}
+    <ContextMenu target={[mediadiv]} bind:open={menuOpen} on:open={menuOpens}>
+        <ContextMenuOption indented labelText="Browse Chapters" shortcutText="⌘B" 
+            onclick={() => {$selectedMedia = media;}}
+        />
+        <ContextMenuOption
+            indented
+            labelText={isBookmarked ? 'Remove from Bookmarks' : 'Add to Bookmarks'}
+            shortcutText="⌘F"
+            onclick={toggleBookmark}
+        />
+    </ContextMenu>
+    {#if isMediaOrphanedBookmark}
         <span in:coinflip={{ duration: 200 }}>
             <Button
                 class="orphaned"
@@ -130,25 +144,25 @@
             />
         </span>
     {/if}
-    <button 
-        class="website"
-        onclick={() => {
-            window.open(media.Parent.URI.href, '_blank');
-        }}
-        title="Open {media.Parent.URI.href}"
-        aria-label="Open {media.Parent.URI.href}"
-    >
-        <img
-            class="pluginIcon"
-            src={media.Parent.Icon}
-            alt="Media Plugin Icon"
-        />
-    </button>
+    {#if !isMediaOrphanedBookmark}
+        <button 
+            class="website"
+            onclick={() => window.open(media.Parent.URI.href, '_blank')}
+            title="Open {media.Parent.URI.href}"
+            aria-label="Open {media.Parent.URI.href}"
+        >
+            <img
+                class="pluginIcon"
+                src={media.Parent.Icon}
+                alt="Media Plugin Icon"
+            />
+        </button>
+    {/if}
     <ClickableTile
         class="title"
-        onclick={(e) => {
+        onclick={(e: MouseEvent) => {
             e.preventDefault();
-            $selectedMedia = media;
+            if(!isMediaOrphanedBookmark) $selectedMedia = media;
         }}
     >
         <span title={media.Title}>{media.Title}</span>
@@ -158,7 +172,9 @@
             icon={PlayFilled}
             kind="ghost"
             size="small"
-            onclick={(e) => {
+            iconDescription="Unflagged items ({unFlaggedItems.length})"
+            tooltipPosition="left"
+            onclick={(e:MouseEvent) => {
                 e.preventDefault();
                 $selectedMedia = media;
             }}
@@ -196,7 +212,8 @@
         border: none;
         background: none;
         background-color: unset;
-        margin-right: 0.4em;
+        margin-right: 0.4em; 
+        cursor: pointer;
     }
     .media .pluginIcon {
         width: 1.4em;

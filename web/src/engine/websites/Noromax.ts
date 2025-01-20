@@ -4,7 +4,7 @@ import { DecoratableMangaScraper } from '../providers/MangaPlugin';
 import * as MangaStream from './decorators/WordPressMangaStream';
 import * as Common from './decorators/Common';
 
-function MangaExtractor( anchor: HTMLAnchorElement) {
+export function MangaExtractor(anchor: HTMLAnchorElement) {
     return {
         id: anchor.pathname,
         title: anchor.text.replace(/Bahasa Indonesia$/i, '')
@@ -12,7 +12,7 @@ function MangaExtractor( anchor: HTMLAnchorElement) {
 }
 
 @MangaStream.MangaCSS(/^{origin}\/Komik\/[^/]+\/$/)
-@Common.MangasSinglePageCSS('/Komik/list-mode/', 'div#content div.soralist ul li a.series', MangaExtractor)
+@Common.MangasSinglePagesCSS([ '/Komik/list-mode/' ], 'div#content div.soralist ul li a.series', MangaExtractor)
 @MangaStream.ChaptersSinglePageCSS()
 @MangaStream.PagesSinglePageJS()
 @Common.ImageAjax()

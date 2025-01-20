@@ -76,7 +76,6 @@ const translations: VariantResource = { // NOTE: Use defaults for missing transl
   Frontend_Classic_Sidenav_Settings_General: "عام",
   Frontend_Classic_Sidenav_Settings_Interface: "الواجهة",
   Frontend_Classic_Sidenav_Settings_Trackers: "المتتبعون",
-  Frontend_Classic_Sidenav_Settings_Network: "الشبكة",
   // [SECTION]: Frontend FluentCore
   Frontend_FluentCore_Label: "نواة فلورية",
   Frontend_FluentCore_Description: "واجهة بسيطة بدون أجراس أو مصفوفات، خاصة للمطورين للتحقق بسرعة من الوظائف الأساسية",
@@ -281,6 +280,7 @@ const translations: VariantResource = { // NOTE: Use defaults for missing transl
   Plugin_Common_MangaIndex_NotSupported: "غير قادر على إنشاء فهرس المحتوى لهذا الموقع. استخدم ميزة النسخ والصق للوصول مباشرة إلى محتوى عنوان URL محدد!",
   Plugin_Common_Chapter_UnavailableError: "الفصل غير متوفر (غير مشتري/غير مقفل/عام)!",
   Plugin_Common_Chapter_InvalidError: "فشل في استخراج الصفحات من محتوى الفصل!",
+  Plugin_Common_Image_MirroredDownloadError: 'Unable to download image from multiple servers : {0}',
   Plugin_Common_Preferred_Language: "اللغة المفضلة للموقع",
   Plugin_Common_Preferred_LanguageInfo: "اللغة المفضلة لمحتوى الموقع.",
   Plugin_MissingWebsite_UpdateError: "فشل تحديث فهرس المحتوى لموقع غير موجود!",

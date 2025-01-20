@@ -1,13 +1,13 @@
 ﻿import { TestFixture } from '../../../test/WebsitesFixture';
 
-const config = {
+new TestFixture({
     plugin: {
         id: 'mi2mangaes',
         title: 'Mi2mangaES'
     },
     container: {
         url: 'https://es.mi2manga.com/manga/la-tirana-quiere-vivir-honestamente/',
-        id: JSON.stringify({ post: '942', slug: '/manga/la-tirana-quiere-vivir-honestamente/' }),
+        id: JSON.stringify({ post: "2101", slug: '/manga/la-tirana-quiere-vivir-honestamente/' }),
         title: 'La Tirana Quiere Vivir Honestamente'
     },
     child: {
@@ -15,10 +15,8 @@ const config = {
         title: 'Capítulo 59'
     },
     entry: {
-        index: 0,
-        size: 84_386,
+        index: 2,
+        size: 491_456,
         type: 'image/jpeg'
     }
-};
-
-new TestFixture(config).AssertWebsite();
+}).AssertWebsite();
