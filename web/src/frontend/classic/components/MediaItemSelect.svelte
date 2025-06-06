@@ -10,7 +10,8 @@
         Loading,
         Search,
     } from 'carbon-components-svelte';
-    import { ChevronSort, EarthFilled } from 'carbon-icons-svelte';
+    import ChevronSort from 'carbon-icons-svelte/lib/ChevronSort.svelte';
+    import EarthFilled from 'carbon-icons-svelte/lib/EarthFilled.svelte';
 
     import { fade } from 'svelte/transition';
 
@@ -33,6 +34,8 @@
     } from '../../../engine/providers/MediaPlugin';
     import { FlagType } from '../../../engine/ItemflagManager';
     import { resizeBar } from '../lib/actions';
+    import { Key as GlobalKey } from '../../../engine/SettingsGlobal';
+    import type { Directory } from '../../../engine/SettingsManager';
 
     let items: MediaContainer<MediaItem>[] = $state([]);
     let filteredItems: MediaContainer<MediaItem>[] = $state([]);
@@ -107,6 +110,10 @@
 
     let langFilterID: '*' | Tag = $state('*');
     let langFilter = $derived(langFilterID === '*' ? null : langFilterID);
+    //Media Changed and the langFilter is no longer valid.
+    $effect(()=>{
+        if(items.length>0 && !MediaLanguages.includes(langFilter)) langFilterID = '*';
+    });
 
     /*
      * Multi Item Selection
@@ -214,12 +221,15 @@
         }
     };
 
-    function downloadItems(items: MediaContainer<MediaItem>[]) {
-        items.forEach((item) => {
-            window.HakuNeko.DownloadManager.Enqueue(
-                item as StoreableMediaContainer<MediaItem>,
-            );
-        });
+    async function downloadItems(items: MediaContainer<MediaItem>[]) {
+        try {
+            await HakuNeko.SettingsManager.OpenScope().Get<Directory>(GlobalKey.MediaDirectory).EnsureAccess();
+        } catch(error) {
+            // TODO: Use appropriate error visualization ...
+            alert(error?.message ?? error);
+            return;
+        }
+        items.forEach(item => window.HakuNeko.DownloadManager.Enqueue(item as StoreableMediaContainer<MediaItem>));
     }
 
     function reverseSort() {
@@ -240,13 +250,13 @@
             <ContextMenuOption
                 labelText="Download {selectedItems.length} selecteds"
                 shortcutText="⌘S"
-                onclick={() => downloadItems(selectedItems)}
+                onclick={() => downloadItems(selectedItems.toReversed())}
             />
         {/if}
         <ContextMenuOption
             labelText="Download all"
             shortcutText="⌘A"
-            onclick={() => downloadItems(filteredItems)}
+            onclick={() => downloadItems(filteredItems.toReversed())}
         />
         {#if contextItem}
             <ContextMenuDivider />

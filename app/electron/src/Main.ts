@@ -75,22 +75,44 @@ async function CreateApplicationWindow(): Promise<ApplicationWindow> {
     return win;
 }
 
+function CheckHostPermission(url: string, appURI: URL) {
+    try {
+        return new URL(url).hostname === appURI.hostname;
+    } catch {
+        return false;
+    }
+}
+
+function UpdatePermissions(session: Electron.Session, appURI: URL) {
+    session.setPermissionCheckHandler((webContents, permission, requestingOrigin) => CheckHostPermission(requestingOrigin, appURI));
+    session.setPermissionRequestHandler((webContents, permission, callback, details) => callback(CheckHostPermission(details.requestingUrl, appURI)));
+    // TODO: May remove the following workaround when https://github.com/electron/electron/issues/41957 is solved
+    session.on('file-system-access-restricted', (event, details, callback) => callback(CheckHostPermission(details.origin, appURI) ? 'allow' : 'deny'));
+}
+
 async function OpenWindow(): Promise<void> {
-    InitializeMenu();
-    const argv = ParseCLI();
-    const manifest = await LoadManifest();
-    await SetupUserDataDirectory(manifest);
-    app.userAgentFallback = manifest['user-agent'] ?? app.userAgentFallback.split(/\s+/).filter(segment => !/(hakuneko|electron)/i.test(segment)).join(' ');
-    await app.whenReady();
-    const win = await CreateApplicationWindow();
-    const ipc = new IPC(win.webContents);
-    const rpc = new RPCServer('/hakuneko', new RemoteProcedureCallContract(ipc, win.webContents));
-    new RemoteProcedureCallManager(rpc, ipc);
-    new FetchProvider(ipc, win.webContents);
-    new RemoteBrowserWindowController(ipc);
-    new BloatGuard(ipc, win.webContents);
-    win.RegisterChannels(ipc);
-    return win.loadURL(argv.origin ?? manifest.url ?? 'about:blank');
+    try {
+        InitializeMenu();
+        const argv = ParseCLI();
+        const manifest = await LoadManifest();
+        await SetupUserDataDirectory(manifest);
+        app.userAgentFallback = manifest['user-agent'] ?? app.userAgentFallback.split(/\s+/).filter(segment => !/(hakuneko|electron)/i.test(segment)).join(' ');
+        await app.whenReady();
+        const win = await CreateApplicationWindow();
+        const ipc = new IPC(win.webContents);
+        const rpc = new RPCServer('/hakuneko', new RemoteProcedureCallContract(ipc, win.webContents));
+        const uri = new URL(argv.origin ?? manifest.url ?? 'about:blank');
+        UpdatePermissions(win.webContents.session, uri);
+        new RemoteProcedureCallManager(rpc, ipc);
+        new FetchProvider(ipc, win.webContents);
+        new RemoteBrowserWindowController(ipc);
+        new BloatGuard(ipc, win.webContents);
+        win.RegisterChannels(ipc);
+        await win.loadURL(uri.href).catch(error => console.warn(error));
+    } catch(error) {
+        console.error(error);
+        app.quit();
+    }
 }
 
 OpenWindow();

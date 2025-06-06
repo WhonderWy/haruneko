@@ -1,12 +1,12 @@
-import { TestFixture, type Config } from '../../../test/WebsitesFixture';
+import { TestFixture } from '../../../test/WebsitesFixture';
 
-const config: Config = {
+new TestFixture({
     plugin: {
         id: 'siimanga',
         title: 'SiiManga'
     },
     container: {
-        url: 'https://siikomik.cc/manga/i-have-90-billion-licking-gold/',
+        url: 'https://siikomik.org/manga/i-have-90-billion-licking-gold/',
         id: '/manga/i-have-90-billion-licking-gold/',
         title: 'I Have 90 Billion Licking Gold'
     },
@@ -16,9 +16,7 @@ const config: Config = {
     },
     entry: {
         index: 2,
-        size: 268_110,
+        size: 150_237,
         type: 'image/jpeg'
     }
-};
-
-new TestFixture(config).AssertWebsite();
+}).AssertWebsite();

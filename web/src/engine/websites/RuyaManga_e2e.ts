@@ -1,25 +1,23 @@
 ﻿import { TestFixture } from '../../../test/WebsitesFixture';
 
-const config = {
+new TestFixture({
     plugin: {
         id: 'ruyamanga',
         title: 'Rüya Manga'
     },
     container: {
-        url: 'https://www.ruya-manga.com/manga/deli-muhendis/',
-        id: JSON.stringify({ post: '126199', slug: '/manga/deli-muhendis/' }),
+        url: 'https://www.ruyamanga2.com/seri/deli-muhendis/',
+        id: JSON.stringify({ post: '56', slug: '/seri/deli-muhendis/' }),
         title: 'Deli Mühendis'
     },
     child: {
-        id: '/manga/deli-muhendis/bolum-118/',
+        id: '/seri/deli-muhendis/bolum-118/',
         title: 'Bölüm 118'
     },
     entry: {
         index: 0,
-        size: 51_272,
+        size: 54_332,
         type: 'image/webp'
     }
 
-};
-
-new TestFixture(config).AssertWebsite();
+}).AssertWebsite();
