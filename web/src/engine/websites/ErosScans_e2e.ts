@@ -6,9 +6,9 @@ new TestFixture({
         title: 'Eros Scans'
     },
     container: {
-        url: 'https://erosxsun.xyz/manga/i-have-90-billion-licking-gold-coins/',
-        id: '/manga/i-have-90-billion-licking-gold-coins/',
-        title: 'I have 90 billion licking gold coins'
+        url: 'https://erosxsun.xyz/manga/absolute-sword-sense/',
+        id: '/manga/absolute-sword-sense/',
+        title: 'Absolute Sword Sense'
     },
     child: {
         id: '/i-have-90-billion-licking-gold-coins-chapter-500/',
